@@ -7,7 +7,6 @@ export const scheduleEmail = async (req: Request, res: Response) => {
   try {
     const { recipients, subject, body, scheduledAt, delay, hourlyLimit } = req.body;
 
-    // Handle both single 'recipient' for backward compatibility, and 'recipients' array
     let emailsList: string[] = [];
     if (Array.isArray(recipients)) {
       emailsList = recipients;
@@ -24,14 +23,12 @@ export const scheduleEmail = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Invalid scheduledAt date format' });
     }
 
-    // 1. Validate Emails and remove duplicates
     const validEmails = [...new Set(emailsList.filter(email => /^\S+@\S+\.\S+$/.test(email)))];
     
     if (validEmails.length === 0) {
       return res.status(400).json({ error: 'No valid email addresses provided' });
     }
 
-    // 2. Create Campaign
     const campaign = await prisma.campaign.create({
       data: {
         userId: req.user!.id,
@@ -43,7 +40,6 @@ export const scheduleEmail = async (req: Request, res: Response) => {
       }
     });
 
-    // 3. Create Emails in DB (Batching)
     const emailData = validEmails.map(recipient => ({
       recipient,
       subject,
@@ -58,25 +54,27 @@ export const scheduleEmail = async (req: Request, res: Response) => {
       data: emailData
     });
 
-    // 4. Fire and forget ES index updates
     createdEmails.forEach(email => {
       indexEmail(email, req.user!.id).catch(console.error);
     });
 
-    // 5. Calculate Delay
     const now = new Date().getTime();
     let initialDelay = scheduleDate.getTime() - now;
     if (initialDelay < 0) initialDelay = 0;
 
-    // 6. Add to BullMQ in bulk
-    const jobs = createdEmails.map(email => ({
-      name: 'send-email',
-      data: { emailId: email.id },
-      opts: {
-        jobId: email.id,
-        delay: initialDelay,
-      }
-    }));
+    const emailDelayMs = delay ? parseInt(delay) : parseInt(process.env.MIN_EMAIL_DELAY_MS || '2000');
+
+    const jobs = createdEmails.map((email, index) => {
+      const jobDelay = initialDelay + (index * emailDelayMs);
+      return {
+        name: 'send-email',
+        data: { emailId: email.id },
+        opts: {
+          jobId: email.id,
+          delay: jobDelay,
+        }
+      };
+    });
 
     await emailQueue.addBulk(jobs);
 
@@ -97,7 +95,6 @@ export const search = async (req: Request, res: Response) => {
     const { q } = req.query;
     const senderId = req.user!.id;
     
-    // If no query, just return all emails from Postgres for simplicity in the dashboard
     if (!q || typeof q !== 'string' || q.trim() === '') {
       const allEmails = await prisma.email.findMany({
         where: { userId: senderId },
@@ -106,12 +103,10 @@ export const search = async (req: Request, res: Response) => {
       return res.status(200).json({ results: allEmails });
     }
 
-    // Isolate searches to the authenticated user
     const results = await esSearch(senderId, q);
 
     res.status(200).json({ results });
   } catch (error: any) {
-    // If Elasticsearch is down, we return a 503 so the frontend can handle it gracefully.
     res.status(503).json({ error: 'Search service is currently unavailable' });
   }
 };

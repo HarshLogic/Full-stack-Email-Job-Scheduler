@@ -40,9 +40,9 @@ export const emailWorker = new Worker(
     // Now we know the user, use it for rate limiting
     const senderId = email.userId;
     
-    // Use campaign limits if set, otherwise fallback to env vars
-    const emailDelayMs = email.campaign?.delay || MIN_EMAIL_DELAY_MS;
-    const hourlyLimit = email.campaign?.hourlyLimit || MAX_EMAILS_PER_HOUR_PER_SENDER;
+    // Use campaign limits if set (allowing 0), otherwise fallback to env vars
+    const emailDelayMs = email.campaign?.delay ?? MIN_EMAIL_DELAY_MS;
+    const hourlyLimit = email.campaign?.hourlyLimit ?? MAX_EMAILS_PER_HOUR_PER_SENDER;
 
     // --- 2. MINIMUM DELAY RATE LIMITING (Redis Distributed Lock) ---
     const delayKey = `rate:delay:${senderId}`;

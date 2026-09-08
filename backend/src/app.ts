@@ -6,6 +6,7 @@ import emailRoutes from './routes/email';
 import authRoutes from './routes/auth';
 import slackRoutes from './routes/slack';
 import { requireAuth } from './middleware/requireAuth';
+import { serverAdapter } from './config/bullBoard';
 
 const app = express();
 
@@ -18,6 +19,9 @@ app.use('/api/health', healthRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/slack', slackRoutes);
 app.use('/api/emails', requireAuth, emailRoutes); // Protected route
+
+// Bull Board UI
+app.use('/admin/queues', serverAdapter.getRouter());
 
 
 // Basic error handling middleware
