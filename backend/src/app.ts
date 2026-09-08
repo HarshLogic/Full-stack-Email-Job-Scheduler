@@ -1,0 +1,32 @@
+import express, { Request, Response, NextFunction } from 'express';
+import cors from 'cors';
+import cookieParser from 'cookie-parser';
+import healthRoutes from './routes/health';
+import emailRoutes from './routes/email';
+import authRoutes from './routes/auth';
+import slackRoutes from './routes/slack';
+import { requireAuth } from './middleware/requireAuth';
+
+const app = express();
+
+app.use(cors({ origin: process.env.FRONTEND_URL || 'http://localhost:5173', credentials: true }));
+app.use(express.json());
+app.use(cookieParser());
+
+// Routes
+app.use('/api/health', healthRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/slack', slackRoutes);
+app.use('/api/emails', requireAuth, emailRoutes); // Protected route
+
+
+// Basic error handling middleware
+app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
+  console.error(err.stack);
+  res.status(500).json({
+    error: 'Internal Server Error',
+    message: process.env.NODE_ENV === 'development' ? err.message : undefined
+  });
+});
+
+export default app;

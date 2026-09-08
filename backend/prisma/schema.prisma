@@ -1,0 +1,72 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum EmailStatus {
+  SCHEDULED
+  PROCESSING
+  SENT
+  FAILED
+}
+
+model User {
+  id        String   @id @default(uuid())
+  googleId  String   @unique
+  email     String   @unique
+  name      String
+  avatar    String?
+  emails    Email[]
+  campaigns Campaign[]
+  slackConnection SlackConnection?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model SlackConnection {
+  id          String   @id @default(uuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken String
+  channelId   String?  
+  slackUserId String?
+  teamId      String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Campaign {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subject     String
+  body        String
+  hourlyLimit Int?
+  delay       Int?
+  scheduledAt DateTime
+  emails      Email[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Email {
+  id          String      @id @default(uuid())
+  recipient   String
+  subject     String
+  body        String
+  status      EmailStatus @default(SCHEDULED)
+  scheduledAt DateTime
+  sentAt      DateTime?
+  messageId   String?     
+  error       String?     
+  userId      String
+  user        User        @relation(fields: [userId], references: [id])
+  campaignId  String?
+  campaign    Campaign?   @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
