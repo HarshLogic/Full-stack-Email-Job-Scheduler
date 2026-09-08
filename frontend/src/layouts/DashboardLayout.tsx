@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Outlet, useNavigate } from 'react-router-dom';
+import { Navigate, Outlet, useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import { getCurrentUser, getEmails } from '../api';
 import type { User, Email } from '../types';
@@ -7,17 +7,43 @@ import type { User, Email } from '../types';
 export default function DashboardLayout() {
   const [user, setUser] = useState<User | null>(null);
   const [emails, setEmails] = useState<Email[]>([]);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
-    getCurrentUser()
-      .then(({ user }) => setUser(user))
-      .catch(() => navigate('/login'));
-      
-    getEmails().then(({ results }) => setEmails(results)).catch(console.error);
+    let ignore = false;
+
+    const loadData = async () => {
+      try {
+        const [{ user }, { results }] = await Promise.all([
+          getCurrentUser(),
+          getEmails(),
+        ]);
+
+        if (ignore) return;
+
+        setUser(user);
+        setEmails(results);
+      } catch {
+        if (!ignore) {
+          navigate('/login', { replace: true });
+        }
+      } finally {
+        if (!ignore) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadData();
+
+    return () => {
+      ignore = true;
+    };
   }, [navigate]);
 
-  if (!user) return null;
+  if (loading) return null;
+  if (!user) return <Navigate to="/login" replace />;
 
   const scheduledCount = emails.filter(e => e.status === 'SCHEDULED' || e.status === 'PROCESSING').length;
   const sentCount = emails.filter(e => e.status === 'SENT' || e.status === 'FAILED').length;

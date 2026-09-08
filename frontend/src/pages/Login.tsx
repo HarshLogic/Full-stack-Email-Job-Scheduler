@@ -1,4 +1,18 @@
+import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { getCurrentUser } from '../api';
+
 export default function Login() {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    getCurrentUser()
+      .then(() => navigate('/scheduled', { replace: true }))
+      .catch(() => {
+        // Ignore unauthenticated users and keep them on the login page.
+      });
+  }, [navigate]);
+
   const handleLogin = () => {
     window.location.href = 'http://localhost:4000/api/auth/google';
   };

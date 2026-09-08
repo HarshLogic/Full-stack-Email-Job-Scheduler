@@ -13,7 +13,15 @@ function App() {
       <Toaster position="top-right" />
       <Routes>
         <Route path="/login" element={<Login />} />
-        
+
+        <Route path="/dashboard" element={<DashboardLayout />}>
+          <Route index element={<Navigate to="/scheduled" replace />} />
+          <Route path="scheduled" element={<ScheduledList />} />
+          <Route path="sent" element={<SentList />} />
+          <Route path="compose" element={<Compose />} />
+          <Route path="email/:id" element={<EmailView />} />
+        </Route>
+
         <Route path="/" element={<DashboardLayout />}>
           <Route index element={<Navigate to="/scheduled" replace />} />
           <Route path="scheduled" element={<ScheduledList />} />
