@@ -1,6 +1,18 @@
 import Redis, { RedisOptions } from 'ioredis';
 
-const redisUrl = process.env.REDIS_URL?.trim().replace(/^["']|["']$/g, '');
+let redisUrl = process.env.REDIS_URL?.trim().replace(/^["']|["']$/g, '');
+
+if (redisUrl) {
+  // In case the CLI string was pasted (e.g. `redis-cli --tls -u redis://...`)
+  const match = redisUrl.match(/(redis[s]?:\/\/[^\s"']+)/);
+  if (match) {
+    redisUrl = match[1];
+    // If copied from redis-cli with --tls, ensure it uses rediss:// protocol
+    if (process.env.REDIS_URL?.includes('--tls') && redisUrl.startsWith('redis://')) {
+      redisUrl = redisUrl.replace('redis://', 'rediss://');
+    }
+  }
+}
 
 const getRedisConnection = () => {
   if (redisUrl) {
