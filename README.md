@@ -206,43 +206,6 @@ Open `http://localhost:5173` in your browser. Click **⚡ Quick Demo Login (Inst
 
 ---
 
-## 🎥 4. Demo Video (Max 5 Minutes)
-
-> [!NOTE]
-> **Demo Video Link**: [Insert your recorded video link here - e.g. Loom, YouTube, or Google Drive]
-
-### Demo Video Checklist & Walkthrough Steps:
-
-1. **Authentication & Overview (0:00 - 0:45)**:
-   - Open frontend at `http://localhost:5173` or Vercel URL.
-   - Click **⚡ Quick Demo Login** to showcase instant authentication.
-   - Tour the sidebar: **Scheduled** tab, **Sent** tab, and **Compose** button.
-2. **Scheduling Emails (0:45 - 2:00)**:
-   - Click **Compose**.
-   - Add recipient emails (or upload a CSV list).
-   - Set Subject and Body.
-   - Click **Send Later**, pick a time (e.g. 1 minute in the future), and click **Done**.
-   - Show the email appearing in the **Scheduled** list.
-   - Open Bull Board at `/admin/queues` to show the job in the **Delayed** queue.
-3. **Simulating Server Restart (Persistence Test) (2:00 - 3:15)**:
-   - Schedule an email for 2 minutes in the future.
-   - Stop the backend server (`Ctrl + C` in terminal or restart Render service).
-   - Show that the server is down.
-   - Start the server again (`npm run dev`).
-   - Observe that BullMQ recovers the delayed jobs from Redis and PostgreSQL.
-   - When the scheduled timestamp arrives, verify the email dispatches successfully!
-4. **Rate Limiting & Delay Behavior Under Load (3:15 - 4:30)**:
-   - Compose a batch of 5 emails with `delay = 2000ms` and `hourlyLimit = 3`.
-   - Schedule the batch.
-   - Watch the worker console / logs:
-     - Emails 1, 2, and 3 dispatch spaced by 2000ms.
-     - Emails 4 and 5 breach the hourly limit and get automatically rescheduled to the next hour with stagger delay.
-5. **Sent Verification & Preview (4:30 - 5:00)**:
-   - Open the **Sent** tab in the dashboard.
-   - Click the Ethereal email preview link from the worker console (`https://ethereal.email/message/...`) to view the rendered email.
-
----
-
 ## ⚖️ 5. Assumptions, Shortcuts & Trade-offs
 
 1. **Colocated Worker & API Process**:
