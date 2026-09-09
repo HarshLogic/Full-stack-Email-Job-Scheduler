@@ -3,8 +3,9 @@ import nodemailer from 'nodemailer';
 import { connection } from '../config/redis';
 import { emailQueueName } from '../queues/emailQueue';
 import prisma from '../config/prisma';
-import { transporter } from '../services/emailService';
+import { getTransporter } from '../services/emailService';
 import { updateEmailStatus } from '../services/searchService';
+
 
 const concurrency = parseInt(process.env.WORKER_CONCURRENCY || '5', 10);
 const MIN_EMAIL_DELAY_MS = parseInt(process.env.MIN_EMAIL_DELAY_MS || '2000', 10);
@@ -119,7 +120,8 @@ export const emailWorker = new Worker(
     updateEmailStatus(emailId, 'PROCESSING').catch(console.error);
 
     try {
-      const info = await transporter.sendMail({
+      const mailTransporter = await getTransporter();
+      const info = await mailTransporter.sendMail({
         from: '"Email Scheduler" <noreply@emailscheduler.com>',
         to: email.recipient,
         subject: email.subject,

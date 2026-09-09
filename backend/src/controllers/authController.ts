@@ -62,11 +62,13 @@ export const googleCallback = async (req: Request, res: Response) => {
       { expiresIn: '7d' }
     );
 
+    const isProduction = process.env.NODE_ENV === 'production';
+
     // Set HTTP-only cookie
     res.cookie('token', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      secure: isProduction,
+      sameSite: isProduction ? 'none' : 'lax',
       maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
     });
 
@@ -78,6 +80,44 @@ export const googleCallback = async (req: Request, res: Response) => {
   }
 };
 
+export const demoLogin = async (req: Request, res: Response) => {
+  try {
+    const isProduction = process.env.NODE_ENV === 'production';
+    let user = await prisma.user.findFirst({
+      where: { email: 'demo@emailscheduler.com' }
+    });
+
+    if (!user) {
+      user = await prisma.user.create({
+        data: {
+          googleId: 'demo-user-tester',
+          email: 'demo@emailscheduler.com',
+          name: 'Demo Tester',
+          avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=Demo',
+        }
+      });
+    }
+
+    const token = jwt.sign(
+      { userId: user.id },
+      process.env.JWT_SECRET || 'fallback-secret',
+      { expiresIn: '7d' }
+    );
+
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: isProduction ? 'none' : 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000
+    });
+
+    res.json({ message: 'Logged in as Demo Tester', user });
+  } catch (error) {
+    console.error('Demo Login Error:', error);
+    res.status(500).json({ error: 'Demo login failed' });
+  }
+};
+
 export const getCurrentUser = (req: Request, res: Response) => {
   if (!req.user) {
     return res.status(401).json({ error: 'Not authenticated' });
@@ -86,6 +126,11 @@ export const getCurrentUser = (req: Request, res: Response) => {
 };
 
 export const logout = (req: Request, res: Response) => {
-  res.clearCookie('token');
+  const isProduction = process.env.NODE_ENV === 'production';
+  res.clearCookie('token', {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? 'none' : 'lax',
+  });
   res.json({ message: 'Logged out successfully' });
 };

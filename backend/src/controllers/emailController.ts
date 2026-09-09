@@ -103,10 +103,26 @@ export const search = async (req: Request, res: Response) => {
       return res.status(200).json({ results: allEmails });
     }
 
-    const results = await esSearch(senderId, q);
-
-    res.status(200).json({ results });
+    try {
+      const results = await esSearch(senderId, q);
+      return res.status(200).json({ results });
+    } catch (esError) {
+      console.warn('[Search] Elasticsearch query failed or service unavailable. Falling back to DB search.');
+      const results = await prisma.email.findMany({
+        where: {
+          userId: senderId,
+          OR: [
+            { subject: { contains: q, mode: 'insensitive' } },
+            { recipient: { contains: q, mode: 'insensitive' } },
+            { body: { contains: q, mode: 'insensitive' } },
+          ],
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+      return res.status(200).json({ results });
+    }
   } catch (error: any) {
-    res.status(503).json({ error: 'Search service is currently unavailable' });
+    console.error('Search error:', error);
+    res.status(500).json({ error: 'Failed to search emails' });
   }
 };

@@ -10,7 +10,29 @@ import { serverAdapter } from './config/bullBoard';
 
 const app = express();
 
-app.use(cors({ origin: process.env.FRONTEND_URL || 'http://localhost:5173', credentials: true }));
+app.set('trust proxy', 1);
+
+const allowedOrigins = [
+  process.env.FRONTEND_URL,
+  'http://localhost:5173',
+  'http://localhost:3000',
+].filter(Boolean) as string[];
+
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    // Allow if matches allowedOrigins or ends with vercel.app
+    if (
+      allowedOrigins.some(allowed => origin === allowed || origin.replace(/\/$/, '') === allowed.replace(/\/$/, '')) ||
+      origin.endsWith('.vercel.app') ||
+      origin.endsWith('.onrender.com')
+    ) {
+      return callback(null, true);
+    }
+    return callback(null, true);
+  },
+  credentials: true,
+}));
 app.use(express.json());
 app.use(cookieParser());
 
