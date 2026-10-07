@@ -6,16 +6,6 @@ Designed to reliably handle scheduled email delivery, rate limiting, worker conc
 
 ---
 
-## 👥 1. Collaborator Access
-
-Access has been granted to the required reviewers:
-- **`Mitrajit`**
-- **`Yadav036`**
-
-*(Repository: [https://github.com/HarshLogic/Full-stack-Email-Job-Scheduler](https://github.com/HarshLogic/Full-stack-Email-Job-Scheduler))*
-
----
-
 ## 🌐 Live Deployments
 
 - **Backend API**: [https://full-stack-email-job-scheduler-me2s.onrender.com](https://full-stack-email-job-scheduler-me2s.onrender.com)
